@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Global Innovative School – Fee Management</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    .school-title{font-size:46px;font-weight:900;text-align:center}
+    .system-title{font-size:22px;text-align:center;margin-bottom:20px}
+
+    .fee-paid{color:#2ecc71;font-weight:700}
+    .fee-due{color:#e74c3c;font-weight:700}
+
+    .dashboard{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:14px;margin-bottom:20px
+    }
+    .dashboard-card{text-align:center;padding:14px}
+
+    .class-buttons{
+      display:flex;gap:10px;flex-wrap:wrap;justify-content:center
+    }
+    .class-buttons button{
+      background:#444;color:white;border:none;
+      padding:8px 16px;border-radius:20px;cursor:pointer
+    }
+    .class-buttons button.active{
+      background:#764ba2 !important;
+      color:white !important;
+      box-shadow:0 0 10px rgba(118,75,162,0.6);
+}
+
+
+    button{
+      background:#667eea;color:white;border:none;
+      padding:8px 14px;border-radius:8px;
+      cursor:pointer;font-weight:600
+    }
+
+    input,select{
+      padding:10px;border-radius:8px;border:1px solid #ccc;
+      width:100%;margin-bottom:10px
+    }
+
+    .filters{
+      display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px
+    }
+
+    .analytics-wrapper{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:16px
+    }
+    .analytics-card{height:170px;padding:10px}
+    .analytics-card canvas{height:130px !important}
+
+    /* SMALL GREEN TOAST */
+    .toast{
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      background:#2ecc71;
+      color:white;
+      padding:8px 14px;
+      border-radius:8px;
+      font-size:14px;
+      opacity:0;
+      pointer-events:none;
+      transition:.25s;
+      z-index:9999
+    }
+    .toast.show{opacity:1}
+  </style>
+</head>
+
+<body id="body">
+<div id="toast" class="toast"></div>
+
+<div class="container">
+
+  <div class="school-title">Global Innovative School</div>
+  <div class="system-title">Fee Management System</div>
+
+  <button onclick="toggleMode()">Toggle Dark Mode</button>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard">
+    <div class="card dashboard-card"><h2 id="dashStudents">0</h2><p>Total Students</p></div>
+    <div class="card dashboard-card"><h2 id="dashCollected">₹0</h2><p>Collected</p></div>
+    <div class="card dashboard-card"><h2 id="dashPending">₹0</h2><p>Pending</p></div>
+    <div class="card dashboard-card"><h2 id="dashAvg">₹0</h2><p>Avg Fee</p></div>
+    <div class="card dashboard-card"><h2 id="dashHigh">₹0</h2><p>Highest Due</p></div>
+  </div>
+
+  <!-- MANAGEMENT -->
+  <div class="card">
+    <button onclick="addClass()">Add Class</button>
+    <button onclick="deleteClass()">Delete Class</button>
+    <button onclick="addExtraFee()">Add Extra Fee</button>
+    <button onclick="makeReceipt()">Make Receipt</button>
+  </div>
+
+  <!-- ADD STUDENT -->
+  <div class="card big-card">
+    <form id="studentForm">
+      <input id="studentName" placeholder="Student Name" required>
+      <input id="parentPhone" placeholder="Parent Mobile" required>
+      <select id="studentClass"></select>
+      <input id="totalFee" placeholder="Total Fee" type="number" required>
+      <button type="submit">Add Student</button>
+    </form>
+  </div>
+ 
+
+  <!-- CLASS MENU -->
+  <div class="card">
+    <div class="class-buttons" id="classButtons"></div>
+  </div>
+    <!-- FILTERS (RESTORED) -->
+  <div class="filters">
+    <input type="number" id="filterAmt" placeholder="Amount">
+    <button onclick="filterMore()">Due &gt;</button>
+    <button onclick="filterLess()">Due &lt;</button>
+    <button onclick="filterPaid()">Fully Paid</button>
+    <button onclick="filterDue()">Has Due</button>
+    <button onclick="resetFilter()">Reset</button>
+  </div>
+
+     <!-- STUDENT TABLE -->
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th><th>Mobile</th><th>Total</th>
+          <th>Paid</th><th>Due</th>
+          <th>Installments</th>
+          <th>Pay</th>
+          <th>Edit</th>
+          <th>Promote</th>
+          <th>Reminder</th>
+          <th>Delete</th>
+
+        </tr>
+      </thead>
+      <tbody id="students"></tbody>
+    </table>
+  </div>
+  <!-- EXTRA FEE MENU -->
+<div class="card">
+  <h3 style="text-align:center;margin-bottom:10px">Extra Fee Menu</h3>
+  <div class="class-buttons" id="extraFeeButtons"></div>
+</div>
+
+
+  <!-- EXTRA FEE -->
+  <div class="card">
+    <h2 id="extraFeeTitle">Extra Fee Management</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th><th>Class</th><th>Status</th><th>Delete</th>
+        </tr>
+      </thead>
+      <tbody id="extraFeeTable"></tbody>
+    </table>
+  </div>
+
+  <!-- ANALYTICS (3 ONLY) -->
+  <div class="card">
+    <h2>Analytics</h2>
+    <div class="analytics-wrapper">
+      <div class="card analytics-card"><canvas id="chartPaidDue"></canvas></div>
+      <div class="card analytics-card"><canvas id="chartClass"></canvas></div>
+      <div class="card analytics-card"><canvas id="chartInstall"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let classes=["Playgroup","Nursery","KG-1","KG-2","1st","2nd","3rd","4th","5th","6th","7th","8th"]
+let studentsData=[]
+let extraFeeData=[]
+let extraFeeName=""
+let currentClass = ""
+
+function toast(msg){
+  const t=document.getElementById("toast")
+  t.innerText=msg
+  t.classList.add("show")
+  setTimeout(()=>t.classList.remove("show"),2200)
+}
+
+function refreshClasses(){
+  studentClass.innerHTML = classes.map(c =>
+    `<option value="${c}">${c}</option>`
+  ).join("")
+
+  classButtons.innerHTML = classes.map(c =>
+    `<button 
+      class="${c === currentClass ? 'active' : ''}"
+      onclick="filterClass('${c}')">
+      ${c}
+    </button>`
+  ).join("")
+}
+function refreshExtraFeeMenu(){
+  const box = document.getElementById("extraFeeButtons")
+  if(!box) return
+
+  box.innerHTML = extraFeeData.length === 0
+    ? `<small>No extra fees added</small>`
+    : extraFeeData.map((e,i)=>`
+        <button 
+          class="${i === currentExtraFeeIndex ? 'active' : ''}"
+          onclick="selectExtraFee(${i})">
+          ${extraFeeName} – ${e.class}
+        </button>
+      `).join("")
+}
+
+function selectExtraFee(index){
+  currentExtraFeeIndex = index
+  refreshExtraFeeMenu()
+
+  const cls = extraFeeData[index].class
+  render(studentsData.filter(s => s.class === cls))
+
+  toast(`Viewing Extra Fee – ${cls}`)
+}
+
+
+  classButtons.innerHTML = classes.map(c =>
+    `<button 
+      class="${c === currentClass ? 'active' : ''}"
+      onclick="filterClass('${c}')">
+      ${c}
+    </button>`
+  ).join("")
+
+
+refreshClasses()
+
+async function load(){
+  studentsData = await (await fetch("http://192.168.29.114:3001/students")
+).json()
+  dashStudents.innerText = studentsData.length
+  dashCollected.innerText = "₹"+studentsData.reduce((s,x)=>s+x.paidFee,0)
+  dashPending.innerText = "₹"+studentsData.reduce((s,x)=>s+x.dueFee,0)
+  dashAvg.innerText = "₹"+Math.round(studentsData.reduce((s,x)=>s+x.totalFee,0)/(studentsData.length||1))
+  dashHigh.innerText = "₹"+Math.max(0,...studentsData.map(s=>s.dueFee))
+  render(studentsData)
+  drawCharts()
+  refreshExtraFeeMenu()
+  updateDashboardWithExtraFee()
+}
+
+function updateDashboardWithExtraFee(){
+  let extraCollected = 0
+  let extraPending = 0
+
+  extraFeeData.forEach(e=>{
+    if(e.paid) extraCollected += extraFeeAmount
+    else extraPending += extraFeeAmount
+  })
+
+  dashCollected.innerText =
+    "₹" + (studentsData.reduce((s,x)=>s+x.paidFee,0) + extraCollected)
+
+  dashPending.innerText =
+    "₹" + (studentsData.reduce((s,x)=>s+x.dueFee,0) + extraPending)
+}
+
+
+function render(list){
+  students.innerHTML=list.map(s=>`
+<tr>
+<td>${s.name}</td>
+<td>${s.phone}</td>
+<td>₹${s.totalFee}</td>
+<td class="fee-paid">₹${s.paidFee}</td>
+<td class="fee-due">₹${s.dueFee}</td>
+
+<td>
+  ${
+    s.installments && s.installments.length
+      ? s.installments.map(i =>
+          `₹${i.amount}<br><small>${new Date(i.date).toLocaleDateString()}</small>`
+        ).join("<hr>")
+      : "<small>No installments</small>"
+  }
+</td>
+
+<td>
+  <input id="p${s._id}" style="width:60px">
+  <button onclick="pay('${s._id}')">Pay</button>
+</td>
+
+<td><button onclick="editStudent('${s._id}')">Edit</button></td>
+<td><button onclick="promoteStudent('${s._id}')">Promote</button></td>
+
+<td><button onclick="sendReminder('${s.name}','${s.phone}','${s.dueFee}')">Send</button></td>
+<td><button onclick="delStudent('${s._id}')">Delete</button></td>
+
+</tr>
+`).join("")
+}
+
+/* FILTERS */
+function filterClass(c){
+  currentClass = c
+  refreshClasses()
+  render(studentsData.filter(s => s.class === c))
+  toast(`Viewing ${c}`)
+}
+
+
+function filterMore(){ render(studentsData.filter(s=>s.dueFee>Number(filterAmt.value))); toast("Filter applied") }
+function filterLess(){ render(studentsData.filter(s=>s.dueFee<Number(filterAmt.value))); toast("Filter applied") }
+function filterPaid(){ render(studentsData.filter(s=>s.dueFee===0)); toast("Filter applied") }
+function filterDue(){ render(studentsData.filter(s=>s.dueFee>0)); toast("Filter applied") }
+function resetFilter(){ render(studentsData); toast("Filters reset") }
+
+/* ADD STUDENT */
+studentForm.onsubmit=async e=>{
+  e.preventDefault()
+  await fetch("http://192.168.29.114:3001/students/add", {
+method:"POST",headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      name:studentName.value.trim(),
+      phone:parentPhone.value.trim(),
+      class:studentClass.value,
+      totalFee:Number(totalFee.value)
+    })
+  })
+  toast("Student added")
+  studentForm.reset()
+  load()
+}
+
+/* EXTRA FEE */
+let extraFeeAmount = 0
+
+function addExtraFee(){
+  extraFeeName = prompt("Extra Fee Name")
+  extraFeeAmount = Number(prompt("Extra Fee Amount"))
+  if(!extraFeeName || !extraFeeAmount) return
+
+  extraFeeTitle.innerText = `Extra Fee Management – ${extraFeeName} (₹${extraFeeAmount})`
+  extraFeeData = studentsData.map(s=>({
+    student:s.name,
+    class:s.class,
+    paid:false
+  }))
+  renderExtraFee()
+  refreshExtraFeeMenu()
+  updateDashboardWithExtraFee()
+
+
+  toast("Extra fee created")
+}
+currentExtraFeeIndex = null
+refreshExtraFeeMenu()
+
+
+function renderExtraFee(){
+  extraFeeTable.innerHTML=extraFeeData.map((e,i)=>`
+<tr>
+<td>${e.student}</td>
+<td>${e.class}</td>
+<td>
+<button onclick="toggleExtra(${i})"
+style="background:${e.paid?'#2ecc71':'#e74c3c'}">
+${e.paid?'Yes':'No'}
+</button>
+</td>
+<td><button onclick="extraFeeData.splice(${i},1);renderExtraFee();toast('Removed')">Delete</button></td>
+</tr>
+`).join("")
+}
+function toggleExtra(i){
+  extraFeeData[i].paid = !extraFeeData[i].paid
+  renderExtraFee()
+  updateDashboardWithExtraFee()
+  toast("Extra fee status updated")
+}
+
+
+/* PAY / DELETE */
+async function pay(id){
+  const amt = document.getElementById("p"+id).value
+  if(!amt) return toast("Enter amount")
+
+  const student = studentsData.find(s => s._id === id)
+  const today = new Date().toLocaleDateString()
+
+  await fetch("http://192.168.29.114:3001/students/pay/"+id, {
+
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ amount: amt })
+  })
+
+  toast(`Receipt generated for ${student.name}`)
+
+  alert(
+`GLOBAL INNOVATIVE SCHOOL
+
+FEE RECEIPT
+
+STUDENT NAME: **${student.name.toUpperCase()}**
+CLASS: ${student.class}
+
+AMOUNT PAID: **₹${amt}**
+DATE: **${today}**
+
+THANK YOU FOR YOUR PAYMENT.
+
+— GLOBAL INNOVATIVE SCHOOL`
+  )
+
+  load()
+}
+
+
+async function delStudent(id){
+  if(confirm("Delete student?")){
+    await fetch("http://192.168.29.114:3001/students/"+id, {
+method:"DELETE"})
+    toast("Student deleted")
+    load()
+  }
+}
+async function editStudent(id){
+  const s = studentsData.find(x=>x._id===id)
+
+  const name = prompt("Edit Name", s.name)
+  const phone = prompt("Edit Mobile", s.phone)
+  const fee = prompt("Edit Total Fee", s.totalFee)
+
+  if(!name || !phone || !fee) return
+
+  const editInstall = confirm("Do you want to reset installments?")
+  let installments = s.installments
+
+  if(editInstall){
+    installments = []
+  }
+
+  await fetch("http://192.168.29.114:3001/students/edit/"+id, {
+
+    method:"PUT",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      name,
+      phone,
+      totalFee: fee,
+      installments
+    })
+  })
+
+  toast("Student details updated")
+  load()
+}
+
+
+async function promoteStudent(id){
+  await fetch("http://192.168.29.114:3001/students/auto-promote/"+id, {
+method:"POST"})
+  toast("Student promoted successfully")
+  load()
+}
+
+
+function sendReminder(name, phone, due){
+  toast("Fee reminder sent to parent")
+
+  alert(
+`GLOBAL INNOVATIVE SCHOOL
+
+DEAR PARENT,
+
+THIS IS A GENTLE REMINDER THAT THE FEE OF **₹${String(due).toUpperCase()}**
+FOR **${name.toUpperCase()}** IS PENDING.
+
+PLEASE ENSURE PAYMENT AT THE EARLIEST.
+
+THANK YOU,
+GLOBAL INNOVATIVE SCHOOL`
+  )
+}
+
+function makeReceipt(){
+  const name = prompt("Enter Student Name")
+  const cls = prompt("Enter Class")
+  const amt = prompt("Enter Amount Paid")
+  const date = prompt("Enter Date")
+
+  if(!name || !cls || !amt || !date){
+    toast("Receipt details incomplete")
+    return
+  }
+
+  toast("Fee receipt generated successfully")
+
+  alert(
+`GLOBAL INNOVATIVE SCHOOL
+
+FEE RECEIPT
+
+STUDENT NAME: **${name}**
+CLASS: ${cls}
+
+AMOUNT PAID: **₹${amt}**
+DATE: **${date}**
+
+THANK YOU FOR YOUR PAYMENT.
+
+— GLOBAL INNOVATIVE SCHOOL`
+  )
+}
+
+
+function addClass(){ const c=prompt("New class"); if(c&&!classes.includes(c)){classes.push(c);refreshClasses();toast("Class added")} }
+function deleteClass(){ const c=prompt("Delete class"); classes=classes.filter(x=>x!==c);refreshClasses();toast("Class deleted") }
+function toggleMode(){ body.classList.toggle("light") }
+
+/* CHARTS */
+function chartOpts(){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}}
+function drawCharts(){
+  new Chart(chartPaidDue,{type:"doughnut",
+    data:{labels:["Paid","Due"],datasets:[{data:[
+      studentsData.reduce((s,x)=>s+x.paidFee,0),
+      studentsData.reduce((s,x)=>s+x.dueFee,0)
+    ],backgroundColor:["#2ecc71","#e74c3c"]}]},
+    options:chartOpts()
+  })
+  const cls={}
+  classes.forEach(c=>cls[c]=0)
+  studentsData.forEach(s=>cls[s.class]++)
+  new Chart(chartClass,{type:"bar",
+    data:{labels:Object.keys(cls),datasets:[{data:Object.values(cls),backgroundColor:"#667eea"}]},
+    options:chartOpts()
+  })
+  const inst=[]
+  studentsData.forEach(s=>s.installments.forEach(i=>inst.push(i.amount)))
+  new Chart(chartInstall,{type:"line",
+    data:{labels:inst.map((_,i)=>i+1),datasets:[{data:inst,borderColor:"#f39c12"}]},
+    options:chartOpts()
+  })
+}
+
+load()
+</script>
+</body>
+</html>
