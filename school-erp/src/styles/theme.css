@@ -1,0 +1,65 @@
+:root{
+  --bg:#020617;
+  --card:#0f172a;
+  --text:white;
+}
+
+/* THEME 1 */
+.theme-dark{
+  --bg:#020617;
+  --card:#0f172a;
+  --text:white;
+}
+
+/* THEME 2 */
+.theme-light{
+  --bg:#f8fafc;
+  --card:white;
+  --text:#111;
+}
+
+/* THEME 3 */
+.theme-purple{
+  --bg:#1e1b4b;
+  --card:#312e81;
+  --text:white;
+}
+
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  transition:.4s;
+}
+
+.card{
+  .card{
+  background:var(--card);
+  color:var(--text);
+}
+
+  background:var(--card);
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.6);
+}
+.side-btn{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:10px;
+  background:#0f172a;
+  color:white;
+  cursor:pointer;
+}
+
+.side-btn:hover{
+  background:#1e293b;
+}
+
+.logout{
+  margin-top:50px;
+  background:#dc2626;
+}
+
