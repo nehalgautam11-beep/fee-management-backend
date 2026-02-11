@@ -2,7 +2,7 @@ import axios from "axios"
 //import { logout } from "../hooks/useAuth"
 
 const API = axios.create({
-  baseURL: "http://localhost:3001", // ✅ BACKEND PORT
+  baseURL: process.env.REACT_APP_API_URL, // ✅ BACKEND PORT
   timeout: 10000
 })
 
