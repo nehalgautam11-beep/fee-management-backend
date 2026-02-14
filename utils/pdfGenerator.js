@@ -28,16 +28,13 @@ exports.generateReceipt = (student, amount) => {
 const uploadStream = cloudinary.uploader.upload_stream(
   {
     resource_type: "raw",
+    format: "pdf",
     public_id: `school-receipts/receipt_${Date.now()}`,
     overwrite: true
   },
   (error, result) => {
     if (error) return reject(error)
-    const pdfUrl = result.secure_url.replace(
-      "/upload/",
-      "/upload/fl_attachment:false/"
-    )
-
+    const pdfUrl = result.secure_url
     resolve(pdfUrl)
   }
 )
@@ -192,16 +189,13 @@ exports.generateExtraFeeReceipt = (student, feeTitle, amount) => {
 const uploadStream = cloudinary.uploader.upload_stream(
   {
     resource_type: "raw",
+    format: "pdf",
     public_id: `school-receipts/extra_receipt_${Date.now()}`,
     overwrite: true
   },
   (error, result) => {
     if (error) return reject(error)
-    const pdfUrl = result.secure_url.replace(
-      "/upload/",
-      "/upload/fl_attachment:false/"
-    )
-
+    const pdfUrl = result.secure_url
     resolve(pdfUrl)
   }
 )
