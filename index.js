@@ -48,13 +48,10 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-app.use((req, res, next) => {
-  if (!dbReady) {
-    return res.status(503).json({
-      message: "Database not ready. Please retry in a moment.",
-    });
-  }
-  next();
+mongoose.connect(process.env.MONGO_URI, {
+  dbName: "school_erp_db",
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
 });
 
 
