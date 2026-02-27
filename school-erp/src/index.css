@@ -53,6 +53,24 @@ body.theme-light {
 }
 
 /* ============================================
+   LAVENDER THEME
+   ============================================ */
+body.theme-lavender {
+  --bg: #faf5ff;
+  --bg-card: #ffffff;
+  --bg-sidebar: #f3e8ff;
+  --bg-hover: #ede9fe;
+  --text-primary: #2e1065;
+  --text-secondary: #6d28d9;
+  --text-muted: #8b5cf6;
+  --border: #e9d5ff;
+  --accent: #a78bfa;
+  --accent-hover: #8b5cf6;
+  --shadow: rgba(167, 139, 250, 0.2);
+  --gradient: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%);
+}
+
+/* ============================================
    PURPLE THEME
    ============================================ */
 body.theme-purple {
@@ -384,20 +402,3 @@ html {
   background: var(--accent);
 }
 
-/* ============================================
-   LAVENDER THEME
-   ============================================ */
-body.theme-lavender {
-  --bg: #faf5ff;
-  --bg-card: #ffffff;
-  --bg-sidebar: #f3e8ff;
-  --bg-hover: #ede9fe;
-  --text-primary: #2e1065;
-  --text-secondary: #6d28d9;
-  --text-muted: #8b5cf6;
-  --border: #e9d5ff;
-  --accent: #a78bfa;
-  --accent-hover: #8b5cf6;
-  --shadow: rgba(167, 139, 250, 0.2);
-  --gradient: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%);
-}
