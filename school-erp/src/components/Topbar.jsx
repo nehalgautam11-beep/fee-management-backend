@@ -67,6 +67,7 @@ export default function Topbar({ toggleSidebar }) {
             <option value="theme-light">☀️ Light</option>
             <option value="theme-purple">💜 Purple</option>
             <option value="theme-ocean">🌊 Ocean</option>
+            <option value="lavender">Lavender</option>
           </select>
         </div>
 

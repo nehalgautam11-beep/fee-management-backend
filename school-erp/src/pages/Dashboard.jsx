@@ -34,8 +34,7 @@ const [classFees, setClassFees] = useState({
   "5th": "",
   "6th": "",
   "7th": "",
-  "8th": "",
-  "9th": ""
+  "8th": ""
 })
 const [ayLoading, setAyLoading] = useState(false)
 
@@ -129,8 +128,7 @@ const [ayLoading, setAyLoading] = useState(false)
       "5th": "",
       "6th": "",
       "7th": "",
-      "8th": "",
-      "9th": ""
+      "8th": ""
     })
   } catch (err) {
     setToast({ type: "error", message: err.response?.data?.message || err.message })
