@@ -313,7 +313,7 @@ router.delete("/:id", verifyToken, async (req, res) => {
 router.post("/auto-promote/:id", verifyToken, async (req, res) => {
   const classOrder = [
     "Playgroup", "Nursery", "KG-1", "KG-2",
-    "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"
+    "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"
   ]
 
   try {
@@ -428,7 +428,7 @@ router.post("/academic-year/start", verifyToken, async (req, res) => {
 
     const classOrder = [
       "Playgroup", "Nursery", "KG-1", "KG-2",
-      "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"
+      "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"
     ]
 
     const ExtraFee = require("../models/ExtraFee")
@@ -491,7 +491,7 @@ router.get("/academic-year/stats", verifyToken, async (req, res) => {
   try {
     const classOrder = [
       "Playgroup", "Nursery", "KG-1", "KG-2",
-      "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"
+      "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"
     ]
 
     const students = await Student.find({ isActive: { $ne: false } })
