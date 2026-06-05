@@ -1,8 +1,13 @@
 import axios from "axios"
 //import { logout } from "../hooks/useAuth"
 
+const API_BASE_URL =
+  process.env.NODE_ENV === "development"
+    ? process.env.REACT_APP_API_URL || "/api"
+    : "/api"
+
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "/api",
+  baseURL: API_BASE_URL,
   timeout: 10000
 })
 
