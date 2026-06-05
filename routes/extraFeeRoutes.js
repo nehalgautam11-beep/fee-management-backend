@@ -83,42 +83,78 @@ router.get("/", verifyToken, async (req, res) => {
   }
 })
 
-/* =======================
-   GET SINGLE EXTRA FEE
-======================= */
-router.get("/:id", verifyToken, async (req, res) => {
+async function getExtraFeeStats(req, res) {
   try {
-    const extraFee = await ExtraFee.findById(req.params.id).lean()
-    
-    if (!extraFee) {
-      return res.status(404).json({ message: "Extra fee not found" })
-    }
+    const fees = await ExtraFee.find({ isActive: true })
 
-    res.json(extraFee)
+    let collected = 0
+    let pending = 0
+
+    fees.forEach(fee => {
+      collected += fee.payments.filter(p => p.paid).length * fee.amount
+      pending += fee.payments.filter(p => !p.paid).length * fee.amount
+    })
+
+    res.json({
+      totalExtraFees: fees.length,
+      collected,
+      pending
+    })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
+
+router.get("/stats", verifyToken, getExtraFeeStats)
+router.get("/dashboard/stats", verifyToken, getExtraFeeStats)
+
+router.get("/summary", verifyToken, async (req, res) => {
+  try {
+    const extraFees = await ExtraFee.find({ isActive: true })
+
+    let collected = 0
+    let pending = 0
+
+    extraFees.forEach(fee => {
+      fee.payments.forEach(p => {
+        if (p.paid) collected += fee.amount
+        else pending += fee.amount
+      })
+    })
+
+    res.json({
+      collected,
+      pending,
+      extraCollected: collected,
+      extraPending: pending
+    })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
 })
 
+router.get("/chatbot-summary", verifyToken, async (req, res) => {
+  try {
+    const extraFees = await ExtraFee.find({ isActive: true })
 
-router.get("/dashboard/stats", verifyToken, async (req, res) => {
-  const fees = await ExtraFee.find({ isActive: true })
+    let collected = 0
+    let pending = 0
 
-  let collected = 0
-  let pending = 0
+    extraFees.forEach(fee => {
+      fee.payments.forEach(p => {
+        if (p.paid) collected += fee.amount
+        else pending += fee.amount
+      })
+    })
 
-  fees.forEach(fee => {
-    collected += fee.payments.filter(p => p.paid).length * fee.amount
-    pending += fee.payments.filter(p => !p.paid).length * fee.amount
-  })
-
-  res.json({
-    totalExtraFees: fees.length,
-    collected,
-    pending
-  })
+    res.json({
+      extraCollected: collected,
+      extraPending: pending
+    })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
 })
-
 
 router.get("/reminder-link/:extraFeeId/:studentId", verifyToken, async (req, res) => {
   try {
@@ -153,24 +189,18 @@ GIS Fee Department`
   }
 })
 
-router.get("/chatbot-summary", verifyToken, async (req, res) => {
+/* =======================
+   GET SINGLE EXTRA FEE
+======================= */
+router.get("/:id", verifyToken, async (req, res) => {
   try {
-    const extraFees = await ExtraFee.find()
+    const extraFee = await ExtraFee.findById(req.params.id).lean()
+    
+    if (!extraFee) {
+      return res.status(404).json({ message: "Extra fee not found" })
+    }
 
-    let collected = 0
-    let pending = 0
-
-    extraFees.forEach(fee => {
-      fee.payments.forEach(p => {
-        if (p.paid) collected += fee.amount
-        else pending += fee.amount
-      })
-    })
-
-    res.json({
-      extraCollected: collected,
-      extraPending: pending
-    })
+    res.json(extraFee)
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

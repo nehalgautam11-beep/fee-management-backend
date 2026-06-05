@@ -1,0 +1,18 @@
+{
+  "buildCommand": "cd school-erp && npm install && npm run build",
+  "outputDirectory": "school-erp/build",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60
+    },
+    "api/[...path].js": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/((?!api/.*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

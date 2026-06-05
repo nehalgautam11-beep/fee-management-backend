@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import API from "../services/api"
 
 export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false)
@@ -29,10 +30,8 @@ export default function AIChatbot() {
 
   const fetchExtraFeeStats = async () => {
     try {
-      const res = await fetch("/api/extra-fees/summary", {
-        credentials: "include"
-      })
-      const data = await res.json()
+      const res = await API.get("/extra-fees/summary")
+      const data = res.data
 
       setExtraFeeStats({
         extraCollected: data.collected || 0,

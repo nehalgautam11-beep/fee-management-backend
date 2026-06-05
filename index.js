@@ -12,6 +12,7 @@ const reportRoutes = require("./routes/reportRoutes");
 const logRoutes = require("./routes/logRoutes");
 const extraFeeRoutes = require("./routes/extraFeeRoutes");
 let dbReady = false;
+let dbPromise = null;
 
 
 const app = express();
@@ -48,10 +49,48 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-mongoose.connect(process.env.MONGO_URI, {
-  dbName: "school_erp_db",
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
+function connectDB() {
+  if (mongoose.connection.readyState === 1) {
+    dbReady = true;
+    return Promise.resolve();
+  }
+
+  if (!process.env.MONGO_URI) {
+    return Promise.reject(new Error("MONGO_URI is not configured"));
+  }
+
+  if (!dbPromise) {
+    dbPromise = mongoose
+      .connect(process.env.MONGO_URI, {
+        dbName: "school_erp_db",
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      })
+      .then(() => {
+        dbReady = true;
+        console.log("✅ MongoDB Connected Successfully");
+      })
+      .catch((err) => {
+        dbReady = false;
+        dbPromise = null;
+        throw err;
+      });
+  }
+
+  return dbPromise;
+}
+
+app.use(async (req, res, next) => {
+  if (req.path === "/" || req.path === "/health") {
+    return next();
+  }
+
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 
@@ -78,6 +117,7 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res) => {
   res.json({
     status: "healthy",
+    database: dbReady ? "connected" : "not connected",
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
   });
@@ -100,24 +140,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-/* =======================
-   MONGODB CONNECTION
-======================= */
-mongoose
-  .connect(process.env.MONGO_URI, {
-    dbName: "school_erp_db",
-  })
-  .then(() => {
-    dbReady = true;
-    console.log("✅ MongoDB Connected Successfully");
-  })
-
-  .catch((err) => {
-    console.error("❌ MongoDB Connection Error:", err);
-    process.exit(1);
-  });
-
 mongoose.connection.on("connected", () => {
+  dbReady = true;
   console.log("🟢 MongoDB connected / reconnected");
 });
 
@@ -135,22 +159,28 @@ mongoose.connection.on("disconnected", () => {
    SERVER
 ======================= */
 const PORT = process.env.PORT || 3001;
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  connectDB()
+    .then(() => {
+      const server = app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`🌐 http://localhost:${PORT}`);
+      });
 
-/* =======================
-   GRACEFUL SHUTDOWN
-======================= */
-process.on("SIGTERM", () => {
-  console.log("SIGTERM received. Shutting down...");
-  server.close(() => {
-    mongoose.connection.close(false, () => {
-      console.log("MongoDB connection closed");
-      process.exit(0);
+      process.on("SIGTERM", () => {
+        console.log("SIGTERM received. Shutting down...");
+        server.close(() => {
+          mongoose.connection.close(false, () => {
+            console.log("MongoDB connection closed");
+            process.exit(0);
+          });
+        });
+      });
+    })
+    .catch((err) => {
+      console.error("❌ MongoDB Connection Error:", err);
+      process.exit(1);
     });
-  });
-});
+}
 
 module.exports = app;

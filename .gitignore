@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+school-erp/node_modules/
+school-erp/.env
+school-erp/.env.*
+school-erp/build/
+build/
+dist/
+.DS_Store
+receipts/
+public/receipts/
