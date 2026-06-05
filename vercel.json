@@ -5,18 +5,11 @@
     "api/index.js": {
       "maxDuration": 60
     },
-    "api/[...path].js": {
-      "maxDuration": 60
-    },
-    "api/[...path]/index.js": {
+    "api/**/*.js": {
       "maxDuration": 60
     }
   },
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/index.js"
-    },
     {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
