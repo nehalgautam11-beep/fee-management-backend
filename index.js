@@ -103,6 +103,12 @@ app.use("/reports", reportRoutes);
 app.use("/logs", logRoutes);
 app.use("/extra-fees", extraFeeRoutes);
 
+app.use("/api/auth", authRoutes);
+app.use("/api/students", studentRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/logs", logRoutes);
+app.use("/api/extra-fees", extraFeeRoutes);
+
 /* =======================
    HEALTH CHECKS
 ======================= */
