@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -81,7 +81,7 @@ function connectDB() {
 }
 
 app.use(async (req, res, next) => {
-  if (req.path === "/" || req.path === "/health") {
+  if (req.path === "/" || req.path === "/health" || req.path === "/api/health") {
     return next();
   }
 
@@ -121,6 +121,15 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    database: dbReady ? "connected" : "not connected",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/api/health", (req, res) => {
   res.json({
     status: "healthy",
     database: dbReady ? "connected" : "not connected",

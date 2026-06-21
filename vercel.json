@@ -1,9 +1,11 @@
 {
-  "buildCommand": "cd school-erp && npm install && npm run build",
+  "installCommand": "npm install",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "school-erp/build",
   "functions": {
     "api/index.js": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "assets/**"
     }
   },
   "rewrites": [

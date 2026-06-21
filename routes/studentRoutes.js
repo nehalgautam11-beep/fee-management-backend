@@ -116,7 +116,24 @@ router.post("/add", verifyToken, async (req, res) => {
 
     const existing = await Student.findOne({ name, phone, class: cls });
     if (existing) {
-      return res.status(409).json({ message: "Student already exists" });
+      if (existing.isActive) {
+        return res.status(409).json({ message: "Student already exists" });
+      } else {
+        // Reactivate the inactive student
+        existing.isActive = true;
+        
+        // Update the fee to the new one provided during re-addition, 
+        // but ensure we recalculate dueFee based on their previous paidFee (so we don't lose data)
+        existing.totalFee = fee;
+        existing.dueFee = fee - existing.paidFee;
+        
+        await existing.save();
+        
+        return res.status(201).json({
+          message: "Student reactivated successfully",
+          student: existing
+        });
+      }
     }
 
     const student = await Student.create({
@@ -287,9 +304,15 @@ router.delete("/:id", verifyToken, async (req, res) => {
 
     const studentName = student.name
 
-    // Soft delete
-    student.isActive = false
-    await student.save()
+    // Hard delete
+    await student.deleteOne()
+
+    // Also remove this student from any associated Extra Fees
+    const ExtraFee = require("../models/ExtraFee")
+    await ExtraFee.updateMany(
+      {},
+      { $pull: { payments: { studentId: student._id } } }
+    )
 
     // Log action
     const admin = await Admin.findById(req.user.id)

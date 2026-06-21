@@ -6,7 +6,9 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "build": "npm --prefix school-erp install && npm --prefix school-erp run build",
+    "vercel-build": "npm run build"
   },
   "keywords": [],
   "author": "",

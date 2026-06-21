@@ -75,7 +75,6 @@ router.get("/", verifyToken, async (req, res) => {
   try {
     const extraFees = await ExtraFee.find({ isActive: true })
       .sort({ createdAt: -1 })
-      .lean()
 
     res.json(extraFees)
   } catch (err) {
@@ -194,7 +193,7 @@ GIS Fee Department`
 ======================= */
 router.get("/:id", verifyToken, async (req, res) => {
   try {
-    const extraFee = await ExtraFee.findById(req.params.id).lean()
+    const extraFee = await ExtraFee.findById(req.params.id)
     
     if (!extraFee) {
       return res.status(404).json({ message: "Extra fee not found" })
