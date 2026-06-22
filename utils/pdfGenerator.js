@@ -92,6 +92,12 @@ try {
     .fillColor("#666666")
     .text("INNOVATE TO LEAD", 0, 185, { align: "center" })
 
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .fillColor("#000000")
+    .text("AY - 2026-27", 0, 200, { align: "center" })
+
   // Border
   doc.rect(40, 220, 520, 540).lineWidth(2).strokeColor("#1e3c72").stroke()
 
@@ -251,6 +257,12 @@ try {
     .fontSize(11)
     .fillColor("#666666")
     .text("INNOVATE TO LEAD", 0, 185, { align: "center" })
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .fillColor("#000000")
+    .text("AY - 2026-27", 0, 200, { align: "center" })
 
   // Border
   doc.rect(40, 220, 520, 540).lineWidth(2).strokeColor("#1e3c72").stroke()
