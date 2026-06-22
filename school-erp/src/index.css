@@ -296,6 +296,15 @@ body.theme-purple {
    RESPONSIVE DESIGN
    ============================================ */
 
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 24px;
+  cursor: pointer;
+}
+
 /* Tablets */
 @media (max-width: 1024px) {
   .dashboard-grid {
@@ -341,6 +350,37 @@ body.theme-purple {
 
   .card h2 {
     font-size: 28px;
+  }
+
+  .menu-toggle {
+    display: inline-block;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .topbar-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px;
+  }
+
+  .btn-add-student {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-input {
+    width: 100% !important;
   }
 }
 
