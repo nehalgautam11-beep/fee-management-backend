@@ -6,6 +6,7 @@ import StatCard from "../components/StatCard"
 import Toast from "../components/Toast"
 import { getAdmin } from "../hooks/useAuth"
 import AIChatbot from "../components/AIChatbot"
+import { exportAllDataCSV } from "../utils/csvUtils"
 
 
 export default function Dashboard() {
@@ -19,6 +20,7 @@ export default function Dashboard() {
   })
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [allStudentsData, setAllStudentsData] = useState([])
 
 
   const [showAcademicYearModal, setShowAcademicYearModal] = useState(false)
@@ -52,6 +54,7 @@ const [ayLoading, setAyLoading] = useState(false)
 
       const students = studentsRes.data
       const activeStudents = students.filter(s => s.isActive)
+      setAllStudentsData(activeStudents)
       const extraFees = extraFeesRes.data
 
       if (activeStudents.length === 0) {
@@ -211,13 +214,36 @@ const [ayLoading, setAyLoading] = useState(false)
           </p>
         </motion.div>
 
-        {/* Academic Year Button */}
+        {/* Action Buttons */}
 <motion.div
-  style={{ marginBottom: "30px", display: "flex", justifyContent: "flex-end" }}
+  style={{ marginBottom: "30px", display: "flex", justifyContent: "flex-end", gap: "16px", flexWrap: "wrap" }}
   initial={{ opacity: 0 }}
   animate={{ opacity: 1 }}
   transition={{ delay: 0.3 }}
 >
+  <motion.button
+    onClick={() => exportAllDataCSV(allStudentsData)}
+    style={{
+      padding: "10px 20px",
+      background: "linear-gradient(135deg, #10b981, #059669)",
+      color: "white",
+      border: "none",
+      borderRadius: "10px",
+      fontSize: "14px",
+      fontWeight: "600",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      opacity: (loading || allStudentsData.length === 0) ? 0.5 : 1
+    }}
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+    disabled={loading || allStudentsData.length === 0}
+  >
+    📥 Download Full Backup
+  </motion.button>
+
   <motion.button
     onClick={() => setShowAcademicYearModal(true)}
     style={{

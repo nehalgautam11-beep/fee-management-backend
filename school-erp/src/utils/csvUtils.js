@@ -52,3 +52,51 @@ export const exportCSV = (students, className) => {
 
   window.URL.revokeObjectURL(url)
 }
+
+export const exportAllDataCSV = (students) => {
+  const headers = [
+    "Serial No.", 
+    "Name", 
+    "Mobile No.", 
+    "Class", 
+    "Total Fee (Rs)", 
+    "Paid Amount (Rs)", 
+    "Pending Amount (Rs)", 
+    "Payment History"
+  ]
+
+  const rows = students.map((s, i) => {
+    // Format payment history nicely
+    const history = (s.installments || []).map(inst => {
+      const d = new Date(inst.date).toLocaleDateString("en-GB")
+      return `${d}: Rs ${inst.amount}`
+    }).join(" | ")
+
+    // Escape quotes to prevent CSV breaking
+    const safeHistory = `"${history.replace(/"/g, '""')}"`
+
+    return [
+      i + 1,
+      `"${s.name}"`,
+      s.phone,
+      `"${s.class}"`,
+      s.totalFee || 0,
+      s.paidFee || 0,
+      s.dueFee || 0,
+      safeHistory
+    ].join(",")
+  })
+
+  const csv = [headers.join(","), ...rows].join("\n")
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+  const url = window.URL.createObjectURL(blob)
+
+  const a = document.createElement("a")
+  a.href = url
+  
+  const today = new Date().toISOString().split("T")[0]
+  a.download = `School_Database_Backup_${today}.csv`
+  a.click()
+
+  window.URL.revokeObjectURL(url)
+}
