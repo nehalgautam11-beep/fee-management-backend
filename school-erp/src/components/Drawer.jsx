@@ -171,13 +171,41 @@ export default function Drawer({ student, onClose, onUpdate }) {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: "10px" }}
                     >
-                      <div className="installment-date">
-                        {new Date(inst.date).toLocaleDateString()}
+                      <div>
+                        <div className="installment-date">
+                          {new Date(inst.date).toLocaleDateString("en-GB")}
+                        </div>
+                        <div className="installment-amount" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          ₹{inst.amount}
+                          {inst.confirmed && (
+                            <span className="installment-badge" style={{ position: "static", display: "inline-flex" }}>✓</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="installment-amount">₹{inst.amount}</div>
-                      {inst.confirmed && (
-                        <div className="installment-badge">✓</div>
+                      
+                      {inst.receiptUrl && (
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <a 
+                            href={inst.receiptUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="btn btn-download"
+                            style={{ padding: "6px 12px", fontSize: "12px", borderRadius: "6px", textDecoration: "none", display: "flex", alignItems: "center", gap: "4px" }}
+                          >
+                            📄 Receipt
+                          </a>
+                          <a 
+                            href={`https://wa.me/91${student.phone}?text=${encodeURIComponent(`GLOBAL INNOVATIVE SCHOOL\n\nPayment Successful!\n\nStudent: ${student.name}\nClass: ${student.class}\nAmount Paid: ₹${inst.amount}\nDate: ${new Date(inst.date).toLocaleDateString("en-GB")}\n\nDownload Receipt:\n${inst.receiptUrl}\n\nThank you!\n- GIS Fee Department`)}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="btn btn-whatsapp"
+                            style={{ padding: "6px 12px", fontSize: "12px", borderRadius: "6px", textDecoration: "none", display: "flex", alignItems: "center", gap: "4px" }}
+                          >
+                            📱 WhatsApp
+                          </a>
+                        </div>
                       )}
                     </motion.div>
                   ))}
