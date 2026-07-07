@@ -6,6 +6,7 @@ import Toast from "./Toast"
 
 export default function PayModal({ student, onClose, onSuccess }) {
   const [amount, setAmount] = useState("")
+  const [mode, setMode] = useState("Cash")
   const [loading, setLoading] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [toast, setToast] = useState(null)
@@ -34,8 +35,9 @@ export default function PayModal({ student, onClose, onSuccess }) {
       setShowConfirm(false)
 
       const res = await API.post(`/students/${student._id}/installment`, {
-  amount: Number(amount)
-})
+        amount: Number(amount),
+        mode
+      })
 
       setReceiptData(res.data)
       setToast({ type: "success", message: "Payment successful!" })
@@ -108,6 +110,27 @@ export default function PayModal({ student, onClose, onSuccess }) {
                   </div>
                 </div>
 
+                {/* Payment Mode Selection */}
+                <div className="form-group" style={{ marginTop: "16px" }}>
+                  <label>Payment Mode</label>
+                  <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+                    <button
+                      className={`btn ${mode === "Cash" ? "btn-primary" : "btn-cancel"}`}
+                      onClick={() => setMode("Cash")}
+                      style={{ flex: 1, padding: "10px", borderRadius: "8px", border: mode === "Cash" ? "none" : "1px solid var(--border)" }}
+                    >
+                      💵 Cash
+                    </button>
+                    <button
+                      className={`btn ${mode === "Online" ? "btn-primary" : "btn-cancel"}`}
+                      onClick={() => setMode("Online")}
+                      style={{ flex: 1, padding: "10px", borderRadius: "8px", border: mode === "Online" ? "none" : "1px solid var(--border)" }}
+                    >
+                      💳 Online
+                    </button>
+                  </div>
+                </div>
+
                 {/* Preview */}
                 {amount && Number(amount) > 0 && (
                   <motion.div
@@ -160,6 +183,7 @@ export default function PayModal({ student, onClose, onSuccess }) {
               <div className="modal-content">
                 <div className="receipt-info">
                   <p>Amount Paid: <strong>₹{amount}</strong></p>
+                  <p>Mode: <strong>{mode}</strong></p>
                   <p>Receipt generated and ready to download</p>
                 </div>
 

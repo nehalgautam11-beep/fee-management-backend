@@ -8,6 +8,7 @@ export default function Reports() {
   const [summary, setSummary] = useState(null)
   const [classWise, setClassWise] = useState([])
   const [defaulters, setDefaulters] = useState([])
+  const [dailyReports, setDailyReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
 
@@ -18,15 +19,17 @@ export default function Reports() {
   const loadReports = async () => {
     try {
       setLoading(true)
-      const [summaryRes, classRes, defaultersRes] = await Promise.all([
+      const [summaryRes, classRes, defaultersRes, dailyRes] = await Promise.all([
         API.get("/reports/summary"),
         API.get("/reports/class-wise"),
-        API.get("/reports/defaulters")
+        API.get("/reports/defaulters"),
+        API.get("/reports/daily")
       ])
 
       setSummary(summaryRes.data)
       setClassWise(classRes.data)
       setDefaulters(defaultersRes.data)
+      setDailyReports(dailyRes.data)
     } catch (err) {
       setToast({ type: "error", message: err.message })
     } finally {
@@ -108,6 +111,48 @@ export default function Reports() {
                   ))}
                 </tbody>
               </table>
+            </motion.div>
+
+            {/* Daily Reports */}
+            <motion.div className="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} style={{ marginTop: "30px" }}>
+              <h3>Daily Collection Reports (Last 30 Days)</h3>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", marginTop: "20px", borderCollapse: "collapse", minWidth: "500px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                      <th style={{ padding: "12px", textAlign: "left" }}>Date</th>
+                      <th style={{ padding: "12px", textAlign: "right" }}>Cash Collected</th>
+                      <th style={{ padding: "12px", textAlign: "right" }}>Online Collected</th>
+                      <th style={{ padding: "12px", textAlign: "right" }}>Total Collected</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyReports.map((report, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                        <td style={{ padding: "12px", fontWeight: "600", color: "var(--text-primary)" }}>
+                          {new Date(report._id).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td style={{ padding: "12px", textAlign: "right", color: "var(--text-secondary)" }}>
+                          ₹{report.cash.toLocaleString()}
+                        </td>
+                        <td style={{ padding: "12px", textAlign: "right", color: "var(--text-secondary)" }}>
+                          ₹{report.online.toLocaleString()}
+                        </td>
+                        <td style={{ padding: "12px", textAlign: "right", color: "var(--success)", fontWeight: "bold" }}>
+                          ₹{report.total.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                    {dailyReports.length === 0 && (
+                      <tr>
+                        <td colSpan="4" style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)" }}>
+                          No recent payment history available.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </motion.div>
           </>
         )}

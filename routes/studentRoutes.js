@@ -163,6 +163,7 @@ router.post("/add", verifyToken, async (req, res) => {
 router.post("/:id/installment", verifyToken, async (req, res) => {
   try {
     const payAmount = Number(req.body.amount)
+    const mode = req.body.mode || "Cash"
     const student = await Student.findById(req.params.id)
 
     if (!student) {
@@ -195,7 +196,8 @@ router.post("/:id/installment", verifyToken, async (req, res) => {
       amount: payAmount,
       date: new Date(),
       confirmed: true,
-      receiptUrl
+      receiptUrl,
+      mode
     })
     student.paidFee += payAmount
     student.dueFee = student.totalFee - student.paidFee
@@ -208,7 +210,7 @@ router.post("/:id/installment", verifyToken, async (req, res) => {
       adminName: admin?.name || "Admin",
       action: "Fee payment",
       studentName: student.name,
-      details: { amount: payAmount },
+      details: { amount: payAmount, mode },
       ipAddress: req.ip
     })
 

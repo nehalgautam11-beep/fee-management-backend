@@ -16,6 +16,11 @@ const installmentSchema = new mongoose.Schema({
   },
   receiptUrl: {
     type: String
+  },
+  mode: {
+    type: String,
+    enum: ["Cash", "Online"],
+    default: "Cash"
   }
 }, { _id: true })
 
@@ -106,12 +111,13 @@ studentSchema.index({ dueFee: -1 })
 
 
 // Method to add installment
-studentSchema.methods.addInstallment = function(amount, receiptUrl) {
+studentSchema.methods.addInstallment = function(amount, receiptUrl, mode = "Cash") {
   this.installments.push({
     amount,
     date: new Date(),
     confirmed: true,
-    receiptUrl
+    receiptUrl,
+    mode
   })
   this.paidFee += amount
   this.dueFee = this.totalFee - this.paidFee

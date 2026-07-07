@@ -72,4 +72,46 @@ router.get("/defaulters", verifyToken, async (req, res) => {
   }
 })
 
+/* =====================
+   DAILY REPORTS
+===================== */
+router.get("/daily", verifyToken, async (req, res) => {
+  try {
+    const data = await Student.aggregate([
+      { $unwind: "$installments" },
+      { $match: { "installments.confirmed": true } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$installments.date", timezone: "+05:30" } },
+          total: { $sum: "$installments.amount" },
+          cash: { 
+            $sum: { 
+              $cond: [
+                { $eq: [{ $ifNull: ["$installments.mode", "Cash"] }, "Cash"] }, 
+                "$installments.amount", 
+                0
+              ] 
+            } 
+          },
+          online: { 
+            $sum: { 
+              $cond: [
+                { $eq: ["$installments.mode", "Online"] }, 
+                "$installments.amount", 
+                0
+              ] 
+            } 
+          }
+        }
+      },
+      { $sort: { _id: -1 } },
+      { $limit: 30 }
+    ])
+
+    res.json(data)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
 module.exports = router
