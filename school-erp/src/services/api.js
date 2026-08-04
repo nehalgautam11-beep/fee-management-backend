@@ -24,11 +24,14 @@ API.interceptors.response.use(
   err => {
     if (err.response?.status === 401) {
       localStorage.clear();
-      window.location.href = "/login";
-      return;
+
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+        return;
+      }
     }
 
-    throw new Error(err.response?.data?.message || "Request failed");
+    return Promise.reject(new Error(err.response?.data?.message || "Request failed"));
   }
 );
 

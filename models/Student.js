@@ -17,6 +17,13 @@ const installmentSchema = new mongoose.Schema({
   receiptUrl: {
     type: String
   },
+  receiptNo: {
+    type: String
+  },
+  paymentMode: {
+    type: String,
+    default: "Cash"
+  },
   mode: {
     type: String,
     enum: ["Cash", "Online"],
@@ -86,6 +93,11 @@ admissionDate: {
 annualFeeLocked: {
   type: Boolean,
   default: false
+},
+studentCode: {
+  type: String,
+  unique: true,
+  sparse: true
 }
 
 },
@@ -106,6 +118,20 @@ studentSchema.virtual("feeStatus").get(function() {
 studentSchema.index({ class: 1 })
 studentSchema.index({ name: 1, phone: 1, class: 1 }, { unique: true })
 studentSchema.index({ dueFee: -1 })
+studentSchema.index({ studentCode: 1 }, { unique: true, sparse: true })
+
+// Auto-generate an immutable studentCode on first save (PostgreSQL sync key)
+studentSchema.pre("save", function (next) {
+  if (!this.studentCode) {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    let code = "GIS-"
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    this.studentCode = code
+  }
+  next()
+})
 
 // Pre-save hook to calculate dueFee
 
