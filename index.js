@@ -11,6 +11,9 @@ const authRoutes = require("./routes/authRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const logRoutes = require("./routes/logRoutes");
 const extraFeeRoutes = require("./routes/extraFeeRoutes");
+const feeSettingsRoutes = require("./routes/feeSettingsRoutes");
+const erpRoutes = require("./routes/erpRoutes");
+const { ensurePgTables } = require("./utils/pgInit");
 let dbReady = false;
 let dbPromise = null;
 
@@ -102,12 +105,16 @@ app.use("/students", studentRoutes);
 app.use("/reports", reportRoutes);
 app.use("/logs", logRoutes);
 app.use("/extra-fees", extraFeeRoutes);
+app.use("/fee-settings", feeSettingsRoutes);
+app.use("/erp", erpRoutes);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/logs", logRoutes);
 app.use("/api/extra-fees", extraFeeRoutes);
+app.use("/api/fee-settings", feeSettingsRoutes);
+app.use("/api/erp", erpRoutes);
 
 /* =======================
    HEALTH CHECKS
@@ -169,6 +176,13 @@ mongoose.connection.on("disconnected", () => {
   console.warn("⚠️ MongoDB disconnected");
 });
 
+
+/* =======================
+   POSTGRES INITIALIZATION
+======================= */
+// Verify/create the PostgreSQL ERP integration tables.
+// Runs in the background and never blocks MongoDB startup.
+ensurePgTables();
 
 /* =======================
    SERVER

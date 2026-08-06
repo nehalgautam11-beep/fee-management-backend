@@ -5,6 +5,11 @@ const AdminLog = require("../models/AdminLog")
 const verifyToken = require("../middleware/authMiddleware")
 const { createWhatsAppLink } = require("../utils/whatsapp")
 const {generateReceipt}  = require("../utils/pdfGenerator")
+const {
+  syncStudentUpdate,
+  syncPayment,
+  syncFeeUpdate
+} = require("../utils/pgSync")
 const router = express.Router()
 
 /* =======================
@@ -48,54 +53,6 @@ router.get("/:id", verifyToken, async (req, res) => {
 /* =======================
    ADD STUDENT
 ======================= */
-/*router.post("/add", verifyToken, async (req, res) => {
-  try {
-    const { name, phone, class: cls, totalFee } = req.body;
-
-    // Basic validation
-    if (!name || !phone || !cls || totalFee === undefined) {
-      return res.status(400).json({ message: "All fields required" });
-    }
-
-    if (!/^[0-9]{10}$/.test(phone)) {
-      return res.status(400).json({ message: "Invalid phone number" });
-    }
-
-    const fee = Number(totalFee);
-    if (isNaN(fee) || fee <= 0) {
-      return res.status(400).json({ message: "Total fee must be positive" });
-    }
-
-    // Check duplicate
-    const existing = await Student.findOne({ name, phone, class: cls });
-    if (existing) {
-      return res.status(409).json({ message: "Student already exists" });
-    }
-
-    const student = await Student.create({
-      name,
-      phone,
-      class: cls,
-      totalFee: fee,
-      paidFee: 0,
-      dueFee: fee,
-      installments: []
-    });
-
-    return res.status(201).json({
-      message: "Student added successfully",
-      student
-    });
-
-  } catch (err) {
-    console.error("❌ ADD STUDENT ERROR:", err);
-    return res.status(500).json({
-      message: "Failed to add student",
-      error: err.message
-    });
-  }
-});*/
-
 
 router.post("/add", verifyToken, async (req, res) => {
   try {
@@ -203,6 +160,8 @@ router.post("/:id/installment", verifyToken, async (req, res) => {
     student.dueFee = student.totalFee - student.paidFee
     await student.save()
 
+    await syncPayment(student);
+
     // Log action
     const admin = await Admin.findById(req.user.id)
     await AdminLog.create({
@@ -287,6 +246,9 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
     student.class = cls
 
     await student.save()
+
+    await syncStudentUpdate(student);
+
     res.json(student)
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -465,27 +427,29 @@ router.post("/academic-year/start", verifyToken, async (req, res) => {
     const students = await Student.find({ isActive: true })
 
     // 3. Auto-promote and update fees
-for (const student of students) {
-  if (student.class === "8th") {
-    student.isActive = false
-    await student.save()
-    continue
-  }
+    for (const student of students) {
+      if (student.class === "8th") {
+        student.isActive = false
+        await student.save()
+        await syncStudentUpdate(student);
+        continue
+      }
 
-  const idx = classOrder.indexOf(student.class)
-  if (idx !== -1 && idx < classOrder.length - 1) {
-    const nextClass = classOrder[idx + 1]
+      const idx = classOrder.indexOf(student.class)
+      if (idx !== -1 && idx < classOrder.length - 1) {
+        const nextClass = classOrder[idx + 1]
 
-    student.class = nextClass
-    student.paidFee = 0
-    student.totalFee = classFees[nextClass]
-    student.dueFee = classFees[nextClass]
-    student.annualFeeLocked = false
-    student.installments = []
+        student.class = nextClass
+        student.paidFee = 0
+        student.totalFee = classFees[nextClass]
+        student.dueFee = classFees[nextClass]
+        student.annualFeeLocked = false
+        student.installments = []
 
-    await student.save()
-  }
-}
+        await student.save()
+        await syncFeeUpdate(student);
+      }
+    }
 
 
     // Log action
@@ -532,6 +496,60 @@ router.get("/academic-year/stats", verifyToken, async (req, res) => {
       classStats
     })
   } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+/* =======================
+   ASSIGN FEE STRUCTURE (for students imported from ERP)
+   Finance fills Annual Fee for a student that was imported from
+   ERP with feeStructureStatus = "Pending".
+   Student identity fields (name/phone/class) are already imported
+   and are NOT editable here.
+======================= */
+router.post("/:id/assign-fee", verifyToken, async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id)
+    if (!student) return res.status(404).json({ message: "Student not found" })
+
+    const { annualFee } = req.body
+
+    if (annualFee === undefined || annualFee === null || Number(annualFee) < 0) {
+      return res.status(400).json({ message: "Annual Fee is required and must be a positive number" })
+    }
+
+    const numAnnual = Number(annualFee) || 0
+
+    const computedTotal = Math.max(0, numAnnual)
+
+    student.totalFee = computedTotal
+    student.dueFee = computedTotal - (student.paidFee || 0)
+    student.feeStructureStatus = "Assigned"
+
+    await student.save()
+
+    // Sync PostgreSQL fee_summary (studentCode is the integration key).
+    // This is also what flips the student out of the "Pending" list and
+    // makes the ERP show the assigned fee immediately.
+    await syncFeeUpdate(student)
+
+    // Log action
+    const admin = await Admin.findById(req.user.id)
+    await AdminLog.create({
+      adminId: req.user.id,
+      adminName: admin?.name || "Admin",
+      action: "Assigned fee structure",
+      studentName: student.name,
+      details: {
+        annualFee: numAnnual,
+        totalFee: computedTotal
+      },
+      ipAddress: req.ip
+    })
+
+    res.json({ message: "Fee structure assigned successfully", student })
+  } catch (err) {
+    console.error("ASSIGN FEE ERROR:", err)
     res.status(500).json({ message: err.message })
   }
 })
