@@ -121,17 +121,13 @@ studentSchema.index({ dueFee: -1 })
 studentSchema.index({ studentCode: 1 }, { unique: true, sparse: true })
 
 // Auto-generate an immutable studentCode on first save (PostgreSQL sync key)
-studentSchema.pre("save", function (next) {
-  if (!this.studentCode) {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    let code = "GIS-"
-    for (let i = 0; i < 8; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    this.studentCode = code
+studentSchema.pre("save", function () {
+
+  if (this.importedFromERP && !this.studentCode) {
+    throw new Error("ERP student must have a studentCode.");
   }
-  next()
-})
+
+});
 
 // Pre-save hook to calculate dueFee
 

@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"adminId":{"$numberInt":"1"},"timestamp":{"$numberInt":"-1"}},"name":"adminId_1_timestamp_-1"},{"v":{"$numberInt":"2"},"key":{"action":{"$numberInt":"1"}},"name":"action_1"}],"uuid":"85ac17eca4ca4531a931036b1d5a8a53","collectionName":"adminlogs","type":"collection"}
