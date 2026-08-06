@@ -247,7 +247,11 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
 
     await student.save()
 
-    await syncStudentUpdate(student);
+    if (totalFee !== undefined) {
+      await syncFeeUpdate(student);
+    } else {
+      await syncStudentUpdate(student);
+    }
 
     res.json(student)
   } catch (err) {

@@ -147,7 +147,6 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,NOW())
         payment_history  = EXCLUDED.payment_history,
         updated_at       = NOW()`,
       [
-        [
   student.studentCode,
   student.name,
   student.class,
@@ -158,12 +157,12 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,NOW())
   JSON.stringify(paymentHistory),
   student.feeStructureStatus === "Assigned"
 ]
-      ]
     )
     console.log(`✅ [pgSync] Payment synced: ${student.studentCode}`)
     console.log("Rows affected:", result.rowCount)
   } catch (err) {
-    console.error(`❌ [pgSync] syncPayment failed (${student.studentCode}):`, err.message)
+    console.error(`❌ [pgSync] syncPayment failed (${student.studentCode}):`)
+    console.error(err)
   }
 }
 
