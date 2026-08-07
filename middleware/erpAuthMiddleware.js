@@ -1,11 +1,11 @@
-// Verifies that a request genuinely came from the ERP backend (server-to-server),
-// not from a logged-in Fee Management admin. Uses a shared secret instead of the
-// admin JWT flow in authMiddleware.js, since the ERP has no admin login session.
 module.exports = function verifyErpSecret(req, res, next) {
   const provided = req.headers["x-erp-secret"];
 
+  console.log("Provided:", JSON.stringify(provided));
+  console.log("Expected:", JSON.stringify(process.env.ERP_SYNC_SECRET));
+  console.log("Equal:", provided === process.env.ERP_SYNC_SECRET);
+
   if (!process.env.ERP_SYNC_SECRET) {
-    console.error("❌ [erpAuth] ERP_SYNC_SECRET is not configured on the server");
     return res.status(500).json({ message: "ERP integration is not configured" });
   }
 
