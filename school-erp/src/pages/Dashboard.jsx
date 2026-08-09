@@ -6,6 +6,7 @@ import StatCard from "../components/StatCard"
 import Toast from "../components/Toast"
 import { getAdmin } from "../hooks/useAuth"
 import AIChatbot from "../components/AIChatbot"
+import PendingFeeStructureModal from "../components/PendingFeeStructureModal"
 import { exportAllDataCSV } from "../utils/csvUtils"
 
 
@@ -21,6 +22,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
   const [allStudentsData, setAllStudentsData] = useState([])
+  const [pendingFeeStructureStudents, setPendingFeeStructureStudents] = useState([])
+  const [showPendingModal, setShowPendingModal] = useState(false)
 
 
   const [showAcademicYearModal, setShowAcademicYearModal] = useState(false)
@@ -55,6 +58,9 @@ const [ayLoading, setAyLoading] = useState(false)
       const students = studentsRes.data
       const activeStudents = students.filter(s => s.isActive)
       setAllStudentsData(activeStudents)
+      setPendingFeeStructureStudents(
+        activeStudents.filter(s => s.feeStructureStatus === "Pending")
+      )
       const extraFees = extraFeesRes.data
 
       if (activeStudents.length === 0) {
@@ -280,6 +286,13 @@ const [ayLoading, setAyLoading] = useState(false)
             <StatCard title="Total Pending" value={`₹${stats.pending.toLocaleString("en-IN")}`} delay={0.3} />
             <StatCard title="Average Fee" value={`₹${stats.avg.toLocaleString("en-IN")}`} delay={0.4} />
             <StatCard title="Highest Due" value={`₹${stats.high.toLocaleString("en-IN")}`} delay={0.5} />
+            <div onClick={() => setShowPendingModal(true)} style={{ cursor: "pointer" }}>
+              <StatCard
+                title="🟠 Pending Fee Structure"
+                value={pendingFeeStructureStudents.length}
+                delay={0.6}
+              />
+            </div>
           </div>
         )}
       </motion.div>
@@ -366,6 +379,13 @@ const [ayLoading, setAyLoading] = useState(false)
 {/* AI Chatbot */}
 <AIChatbot />
 
+{showPendingModal && (
+  <PendingFeeStructureModal
+    students={pendingFeeStructureStudents}
+    onClose={() => setShowPendingModal(false)}
+    onUpdate={loadDashboard}
+  />
+)}
 
       {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
     </MainLayout>

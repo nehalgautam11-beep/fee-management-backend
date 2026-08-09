@@ -37,10 +37,10 @@ console.log({
 
 router.post("/students/import", verifyErpSecret, async (req, res) => {
   try {
-    const { name, phone, class: cls, erpStudentId } = req.body
+    const { name, class: cls, erpStudentId } = req.body
 
-    if (!name || !phone || !cls) {
-      return res.status(400).json({ message: "name, phone, and class are required" })
+    if (!name || !cls) {
+      return res.status(400).json({ message: "name and class are required" })
     }
 
 
@@ -61,7 +61,6 @@ router.post("/students/import", verifyErpSecret, async (req, res) => {
 
     const student = await Student.create({
       name,
-      phone,
       class: cls,
       totalFee: 0,
       paidFee: 0,
@@ -91,17 +90,16 @@ router.post("/students/import", verifyErpSecret, async (req, res) => {
 /* =======================
    PROFILE UPDATE (ERP -> Fee Management)
    Called when the ERP updates a student's profile.
-   Only name/phone/class are touched — fee data is never modified.
+   Only name/class are touched — fee data is never modified.
 ======================= */
 router.put("/students/:identifier", verifyErpSecret, async (req, res) => {
   try {
     const student = await findByErpIdentifier(req.params.identifier)
     if (!student) return res.status(404).json({ message: "Student not found" })
 
-    const { name, phone, class: cls } = req.body
+    const { name, class: cls } = req.body
 
     if (name !== undefined) student.name = name
-    if (phone !== undefined) student.phone = phone
     if (cls !== undefined) student.class = cls
 
     await student.save()

@@ -3,11 +3,14 @@ import { useState } from "react"
 import Drawer from "./Drawer"
 import API from "../services/api"
 import Toast from "./Toast"
+import AssignFeeModal from "./AssignFeeModal"
 
 export default function StudentRow({ data, onUpdate }) {
   const [showDrawer, setShowDrawer] = useState(false)
   const [toast, setToast] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showAssignFeeModal, setShowAssignFeeModal] = useState(false)
+  const isPendingFeeStructure = data.feeStructureStatus === "Pending"
 
   const handleReminder = async () => {
     try {
@@ -45,6 +48,30 @@ export default function StudentRow({ data, onUpdate }) {
           <div className="student-info">
             <h4 className="student-name">{data.name}</h4>
             <p className="student-class">Class: {data.class}</p>
+            <div style={{ display: "flex", gap: "6px", marginTop: "4px", flexWrap: "wrap" }}>
+              {data.importedFromERP && (
+                <span style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: "999px",
+                  background: "rgba(99, 102, 241, 0.15)",
+                  color: "var(--accent)"
+                }}>
+                  Imported from ERP
+                </span>
+              )}
+              <span style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                padding: "2px 8px",
+                borderRadius: "999px",
+                background: isPendingFeeStructure ? "rgba(245, 158, 11, 0.15)" : "rgba(16, 185, 129, 0.15)",
+                color: isPendingFeeStructure ? "#f59e0b" : "#10b981"
+              }}>
+                {isPendingFeeStructure ? "🟠 Fee Pending" : "🟢 Fee Assigned"}
+              </span>
+            </div>
           </div>
           <div className={`status-badge ${data.dueFee === 0 ? "paid" : "pending"}`}>
             {data.dueFee === 0 ? "✓ Paid" : "⚠ Pending"}
@@ -52,15 +79,27 @@ export default function StudentRow({ data, onUpdate }) {
         </div>
 
         <div className="student-card-actions">
-          <motion.button
-            className="btn-reminder"
-            onClick={handleReminder}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={data.dueFee === 0}
-          >
-            📱 Send Reminder
-          </motion.button>
+          {isPendingFeeStructure ? (
+            <motion.button
+              className="btn-details"
+              onClick={() => setShowAssignFeeModal(true)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)", color: "#fff" }}
+            >
+              💰 Assign Fee
+            </motion.button>
+          ) : (
+            <motion.button
+              className="btn-reminder"
+              onClick={handleReminder}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={data.dueFee === 0}
+            >
+              📱 Send Reminder
+            </motion.button>
+          )}
 
           <motion.button
             className="btn-details"
@@ -79,6 +118,14 @@ export default function StudentRow({ data, onUpdate }) {
           student={data}
           onClose={() => setShowDrawer(false)}
           onUpdate={onUpdate}
+        />
+      )}
+
+      {showAssignFeeModal && (
+        <AssignFeeModal
+          student={data}
+          onClose={() => setShowAssignFeeModal(false)}
+          onSuccess={onUpdate}
         />
       )}
 

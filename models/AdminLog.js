@@ -24,7 +24,8 @@ enum: [
   "Logout",
   "Deleted extra fee",
   "Started new academic year",
-  "Removed student from extra fee"
+  "Removed student from extra fee",
+  "Assigned fee structure"
 ]
 
   },
