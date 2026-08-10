@@ -59,18 +59,28 @@ router.post("/students/import", verifyErpSecret, async (req, res) => {
 
     console.log("verifyErpSecret =", typeof verifyErpSecret);
 
-    const student = await Student.create({
-      name,
-      class: cls,
-      totalFee: 0,
-      paidFee: 0,
-      dueFee: 0,
-      isActive: true,
-      importedFromERP: true,
-      erpStudentId: erpStudentId || undefined,
-      feeStructureStatus: "Pending",
-      installments: []
-    })
+
+    console.log("========== ERP IMPORT DEBUG ==========");
+    console.log("erpStudentId:", erpStudentId);
+    console.log("studentCode to save:", erpStudentId);
+    console.log("name:", name);
+    console.log("class:", cls);
+
+      const student = await Student.create({
+    studentCode: erpStudentId,
+    erpStudentId,
+    name,
+    class: cls,
+
+    totalFee: 0,
+    paidFee: 0,
+    dueFee: 0,
+
+    isActive: true,
+    importedFromERP: true,
+    feeStructureStatus: "Pending",
+    installments: []
+  })
 
     // Sync PostgreSQL fee_summary right away (totalFee 0, status "Pending")
     // so the ERP can show the "🟠 Pending" fee status immediately.
