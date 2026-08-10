@@ -95,7 +95,7 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,NOW())
         fee_structure_assigned  = EXCLUDED.fee_structure_assigned,
         active                  = EXCLUDED.active,
         updated_at              = NOW()`,
-      [
+      
         [
   student.studentCode,
   student.name,
@@ -107,7 +107,7 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,NOW())
   JSON.stringify(buildPaymentHistory(student)),
   student.feeStructureStatus === "Assigned"
 ]
-      ]
+      
     )
     console.log(`✅ [pgSync] Student info updated: ${student.studentCode}`)
     console.log("Rows affected:", result.rowCount)
@@ -199,7 +199,7 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,NOW())
         payment_history          = EXCLUDED.payment_history,
         fee_structure_assigned   = EXCLUDED.fee_structure_assigned,
         updated_at               = NOW()`,
-      [
+      
         [
   student.studentCode,
   student.name,
@@ -211,7 +211,7 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,NOW())
   JSON.stringify(paymentHistory),
   student.feeStructureStatus === "Assigned"
 ]
-      ]
+      
     )
     console.log(`✅ [pgSync] Fee updated: ${student.studentCode}`)
     console.log("Rows affected:", result.rowCount)
