@@ -4,9 +4,8 @@ import MainLayout from "../layout/MainLayout"
 import API from "../services/api"
 import ClassSelector from "../components/ClassSelector"
 import StudentRow from "../components/StudentRow"
-import AddStudentModal from "../components/AddStudentModal"
 import Toast from "../components/Toast"
-import { importCSV, exportCSV } from "../utils/csvUtils"
+import { exportCSV } from "../utils/csvUtils"
 
 
 
@@ -14,7 +13,6 @@ export default function Students() {
   const [selectedClass, setSelectedClass] = useState("")
   const [allStudents, setAllStudents] = useState([])
   const [loading, setLoading] = useState(false)
-  const [showAddModal, setShowAddModal] = useState(false)
   const [toast, setToast] = useState(null)
   const [search, setSearch] = useState("")
 
@@ -95,42 +93,11 @@ for (const student of filteredStudents) {
 }
 
 
-// ================= CSV IMPORT / EXPORT =================
-
-const handleImport = async (e) => {
-  const file = e.target.files[0]
-  if (!file) return
-
-  try {
-    setLoading(true)
-
-    const studentsFromCSV = await importCSV(file)
-
-    for (const student of studentsFromCSV) {
-      await API.post("/students/add", student)
-    }
-
-    setToast({
-      type: "success",
-      message: `${studentsFromCSV.length} students imported successfully`
-    })
-
-    loadStudents()
-    e.target.value = "" // reset input
-  } catch (err) {
-    setToast({
-      type: "error",
-      message: err.message || "CSV import failed"
-    })
-  } finally {
-    setLoading(false)
-  }
-}
+// ================= CSV EXPORT =================
 
 const handleExport = () => {
   if (!selectedClass) return
   exportCSV(filteredStudents, selectedClass)
-
 }
 
 const filteredStudents = getFilteredStudents()
@@ -139,7 +106,7 @@ const filteredStudents = getFilteredStudents()
     
     <MainLayout>
       <div className="students-page">
-        {/* Header with Add Button */}
+        {/* Header with ERP Note */}
         <motion.div
           className="page-header"
           style={{
@@ -168,32 +135,24 @@ const filteredStudents = getFilteredStudents()
             </p>
           </div>
 
-          <motion.button
-            className="btn-add-student"
-            onClick={() => setShowAddModal(true)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <div
             style={{
-              padding: "14px 24px",
-              background: "linear-gradient(135deg, var(--accent), var(--accent-light))",
-              color: "white",
-              border: "none",
+              padding: "12px 18px",
+              background: "rgba(99, 102, 241, 0.1)",
+              border: "1px dashed var(--accent)",
               borderRadius: "12px",
-              fontSize: "15px",
-              fontWeight: "600",
-              cursor: "pointer",
+              fontSize: "13px",
+              color: "var(--text-secondary)",
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              boxShadow: "0 4px 20px rgba(99, 102, 241, 0.4)"
+              gap: "8px"
             }}
           >
-            <span style={{ fontSize: "20px" }}>➕</span>
-            Add Student
-  </motion.button>
-</motion.div>
+            <span>ℹ️</span>
+            <span>Students will be added in the main School ERP system</span>
+          </div>
+        </motion.div>
 
-{/* Add button in header */}
 {selectedClass && filteredStudents.length > 0 && (
   <motion.button
     onClick={promoteWholeClass}
@@ -294,30 +253,6 @@ const filteredStudents = getFilteredStudents()
 
 {selectedClass && (
   <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
-    <input
-      type="file"
-      accept=".csv"
-      id="csvInput"
-      hidden
-      onChange={handleImport}
-    />
-
-    <motion.button
-      type="button"
-      onClick={() => document.getElementById("csvInput").click()}
-      whileHover={{ scale: 1.05 }}
-      style={{
-        padding: "12px 20px",
-        background: "var(--accent)",
-        color: "white",
-        border: "none",
-        borderRadius: "10px",
-        cursor: "pointer"
-      }}
-    >
-      📥 Import CSV
-    </motion.button>
-
     <motion.button
       type="button"
       onClick={handleExport}
@@ -383,22 +318,6 @@ const filteredStudents = getFilteredStudents()
                 <div className="no-data-icon">📚</div>
                 <h4>No students found</h4>
                 <p>No students enrolled in this class yet</p>
-                <motion.button
-                  style={{
-                    marginTop: "20px",
-                    padding: "12px 24px",
-                    background: "var(--accent)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    cursor: "pointer"
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowAddModal(true)}
-                >
-                  ➕ Add First Student
-                </motion.button>
               </motion.div>
             ) : (
               <div className="students-grid">
@@ -432,13 +351,6 @@ const filteredStudents = getFilteredStudents()
           </motion.div>
         )}
       </div>
-
-      {showAddModal && (
-        <AddStudentModal
-          onClose={() => setShowAddModal(false)}
-          onSuccess={loadStudents}
-        />
-      )}
 
       {toast && (
         <Toast
