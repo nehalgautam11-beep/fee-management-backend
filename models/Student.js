@@ -39,9 +39,9 @@ const studentSchema = new mongoose.Schema({
     minlength: 2,
     maxlength: 100
   },
-  phone: {
+    phone: {
     type: String,
-    required: [true, "Phone number is required"],
+    required: false,
     trim: true,
     match: [/^[0-9]{10}$/, "Please enter a valid 10-digit phone number"]
   },
@@ -66,10 +66,10 @@ const studentSchema = new mongoose.Schema({
 }
 ,
   totalFee: {
-    type: Number,
-    required: [true, "Total fee is required"],
-    min: [0, "Total fee cannot be negative"]
-  },
+  type: Number,
+  default: 0,
+  min: [0, "Total fee cannot be negative"]
+},
   paidFee: {
     type: Number,
     default: 0,
@@ -98,6 +98,22 @@ studentCode: {
   type: String,
   unique: true,
   sparse: true
+},
+erpStudentId: {
+  type: String,
+  unique: true,
+  sparse: true
+},
+
+importedFromERP: {
+  type: Boolean,
+  default: false
+},
+
+feeStructureStatus: {
+  type: String,
+  enum: ["Pending", "Assigned"],
+  default: "Pending"
 }
 
 },
