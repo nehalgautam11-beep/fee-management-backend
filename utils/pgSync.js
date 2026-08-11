@@ -92,7 +92,6 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,NOW())
       ON CONFLICT (student_code) DO UPDATE SET
         student_name           = EXCLUDED.student_name,
         class_name              = EXCLUDED.class_name,
-        fee_structure_assigned  = EXCLUDED.fee_structure_assigned,
         active                  = EXCLUDED.active,
         updated_at              = NOW()`,
       
@@ -197,7 +196,6 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,NOW())
         paid_amount              = EXCLUDED.paid_amount,
         pending_amount           = EXCLUDED.pending_amount,
         payment_history          = EXCLUDED.payment_history,
-        fee_structure_assigned   = EXCLUDED.fee_structure_assigned,
         updated_at               = NOW()`,
       
         [
