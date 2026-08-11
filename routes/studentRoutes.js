@@ -214,6 +214,176 @@ Thank you!
   }
 })
 
+
+
+
+router.put("/:id/installment/:installmentId", verifyToken, async (req, res) => {
+  try {
+
+    const student = await Student.findById(req.params.id)
+
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found"
+      })
+    }
+
+    const installment =
+      student.installments.id(req.params.installmentId)
+
+    if (!installment) {
+      return res.status(404).json({
+        message: "Installment not found"
+      })
+    }
+
+    const newAmount =
+      req.body.amount !== undefined
+        ? Number(req.body.amount)
+        : installment.amount
+
+    const newDate =
+      req.body.date !== undefined
+        ? new Date(req.body.date)
+        : installment.date
+
+    if (
+      Number.isNaN(newAmount) ||
+      newAmount <= 0
+    ) {
+      return res.status(400).json({
+        message: "Invalid installment amount"
+      })
+    }
+
+    if (Number.isNaN(newDate.getTime())) {
+      return res.status(400).json({
+        message: "Invalid installment date"
+      })
+    }
+
+    /*
+     * Calculate the new paid amount.
+     *
+     * Remove old installment amount first,
+     * then add the new amount.
+     */
+    const newPaidFee =
+      student.paidFee -
+      installment.amount +
+      newAmount
+
+    if (newPaidFee > student.totalFee) {
+      return res.status(400).json({
+        message: "Installment amount exceeds total fee",
+        maxAllowed:
+          student.totalFee -
+          (student.paidFee - installment.amount)
+      })
+    }
+
+    installment.amount = newAmount
+    installment.date = newDate
+
+    student.paidFee = newPaidFee
+    student.dueFee =
+      student.totalFee -
+      student.paidFee
+
+    // Never turn an assigned fee back to pending.
+    if (student.totalFee > 0) {
+      student.feeStructureStatus = "Assigned"
+    }
+
+    await student.save()
+
+    await syncFeeUpdate(student)
+
+    res.json({
+      success: true,
+      message: "Installment updated successfully",
+      student
+    })
+
+  } catch (err) {
+
+    console.error(
+      "INSTALLMENT UPDATE ERROR:",
+      err
+    )
+
+    res.status(500).json({
+      message: err.message
+    })
+  }
+})
+
+
+router.delete("/:id/installment/:installmentId", verifyToken, async (req, res) => {
+  try {
+
+    const student = await Student.findById(req.params.id)
+
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found"
+      })
+    }
+
+    const installment =
+      student.installments.id(req.params.installmentId)
+
+    if (!installment) {
+      return res.status(404).json({
+        message: "Installment not found"
+      })
+    }
+
+    const removedAmount =
+      installment.amount
+
+    student.installments.pull(
+      req.params.installmentId
+    )
+
+    student.paidFee =
+      Math.max(
+        0,
+        student.paidFee - removedAmount
+      )
+
+    student.dueFee =
+      student.totalFee -
+      student.paidFee
+
+    // Keep fee structure assigned.
+    if (student.totalFee > 0) {
+      student.feeStructureStatus = "Assigned"
+    }
+
+    await student.save()
+
+    await syncFeeUpdate(student)
+
+    res.json({
+      success: true,
+      message: "Installment deleted successfully",
+      student
+    })
+
+  } catch (err) {
+
+    console.error(
+      "INSTALLMENT DELETE ERROR:",
+      err
+    )
+
+    res.status(500).json({
+      message: err.message
+    })
+  }
+})
+
 /* =======================
    EDIT STUDENT
 ======================= */
@@ -223,22 +393,41 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
     const { name, phone, class: cls, totalFee } = req.body
 
     if (!name || !phone || !cls) {
-      return res.status(400).json({ message: "All fields required" })
+      return res.status(400).json({
+        message: "All fields required"
+      })
     }
 
     const student = await Student.findById(req.params.id)
-    if (!student) return res.status(404).json({ message: "Student not found" })
+
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found"
+      })
+    }
 
     if (totalFee !== undefined) {
-      if (student.annualFeeLocked) {
+
+      const newTotalFee = Number(totalFee)
+
+      if (Number.isNaN(newTotalFee) || newTotalFee < 0) {
         return res.status(400).json({
-          message: "Annual fee can be updated only once per academic year"
+          message: "Total fee must be a valid non-negative number"
         })
       }
 
-      student.totalFee = Number(totalFee)
-      student.dueFee = student.totalFee - student.paidFee
-      student.annualFeeLocked = true
+      if (newTotalFee < student.paidFee) {
+        return res.status(400).json({
+          message:
+            `Total fee cannot be less than already paid amount ₹${student.paidFee}`
+        })
+      }
+
+      student.totalFee = newTotalFee
+      student.dueFee = newTotalFee - student.paidFee
+
+      // A fee has now been assigned/defined.
+      student.feeStructureStatus = "Assigned"
     }
 
     student.name = name
@@ -248,56 +437,22 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
     await student.save()
 
     if (totalFee !== undefined) {
-      await syncFeeUpdate(student);
+      await syncFeeUpdate(student)
     } else {
-      await syncStudentUpdate(student);
+      await syncStudentUpdate(student)
     }
 
     res.json(student)
+
   } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-})
- 
-/* =======================
-   DELETE STUDENT
-======================= */
-router.delete("/:id", verifyToken, async (req, res) => {
-  try {
-    const student = await Student.findById(req.params.id)
-    
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" })
-    }
 
-    const studentName = student.name
+    console.error("EDIT STUDENT ERROR:", err)
 
-    // Hard delete
-    await student.deleteOne()
-
-    // Also remove this student from any associated Extra Fees
-    const ExtraFee = require("../models/ExtraFee")
-    await ExtraFee.updateMany(
-      {},
-      { $pull: { payments: { studentId: student._id } } }
-    )
-
-    // Log action
-    const admin = await Admin.findById(req.user.id)
-    await AdminLog.create({
-      adminId: req.user.id,
-      adminName: admin?.name || "Admin",
-      action: "Deleted student",
-      studentName,
-      ipAddress: req.ip
+    res.status(500).json({
+      message: err.message
     })
-
-    res.json({ message: "Student deleted successfully" })
-  } catch (err) {
-    res.status(500).json({ message: err.message })
   }
 })
-
 /* =======================
    AUTO PROMOTE
 ======================= */

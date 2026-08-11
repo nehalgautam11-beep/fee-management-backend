@@ -9,7 +9,18 @@ export default function Drawer({ student, onClose, onUpdate }) {
   const [showPayModal, setShowPayModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [editData, setEditData] = useState({ name: "", class: "", phone: "" })
+  const [editData, setEditData] = useState({
+    name: "",
+    class: "",
+    phone: "",
+    totalFee: ""
+  })
+  const [showInstallmentEditModal, setShowInstallmentEditModal] = useState(false)
+  const [installmentEditData, setInstallmentEditData] = useState({
+    installmentId: "",
+    amount: "",
+    date: ""
+  })
   const [toast, setToast] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -24,7 +35,8 @@ export default function Drawer({ student, onClose, onUpdate }) {
       setEditData({
         name: student.name,
         class: student.class,
-        phone: student.phone
+        phone: student.phone,
+        totalFee: student.totalFee ?? 0
       })
     }
   }, [student])
@@ -64,27 +76,170 @@ export default function Drawer({ student, onClose, onUpdate }) {
   }
 
   const handleEdit = async () => {
-    // Validation
+
     if (!editData.name || !editData.class || !editData.phone) {
-      setToast({ type: "error", message: "All fields are required" })
+      setToast({
+        type: "error",
+        message: "Name, class and phone are required"
+      })
       return
     }
 
     if (!/^[0-9]{10}$/.test(editData.phone)) {
-      setToast({ type: "error", message: "Invalid phone number (10 digits required)" })
+      setToast({
+        type: "error",
+        message: "Invalid phone number (10 digits required)"
+      })
+      return
+    }
+
+    const totalFee = Number(editData.totalFee)
+
+    if (Number.isNaN(totalFee) || totalFee < 0) {
+      setToast({
+        type: "error",
+        message: "Invalid total fee"
+      })
+      return
+    }
+
+    if (totalFee < student.paidFee) {
+      setToast({
+        type: "error",
+        message:
+          `Total fee cannot be less than paid amount ₹${student.paidFee}`
+      })
       return
     }
 
     try {
+
       setLoading(true)
-      await API.put(`/students/edit/${student._id}`, editData)
-      setToast({ type: "success", message: "Student updated successfully" })
+
+      await API.put(
+        `/students/edit/${student._id}`,
+        {
+          name: editData.name,
+          class: editData.class,
+          phone: editData.phone,
+          totalFee
+        }
+      )
+
+      setToast({
+        type: "success",
+        message: "Student and fee updated successfully"
+      })
+
       setShowEditModal(false)
+
       setTimeout(() => {
         onUpdate()
-      }, 1000)
+      }, 500)
+
     } catch (err) {
-      setToast({ type: "error", message: err.response?.data?.message || err.message })
+
+      setToast({
+        type: "error",
+        message:
+          err.response?.data?.message ||
+          err.message
+      })
+
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditInstallment = async () => {
+
+    const { installmentId, amount, date } =
+      installmentEditData
+
+    const newAmount = Number(amount)
+
+    if (
+      !installmentId ||
+      Number.isNaN(newAmount) ||
+      newAmount <= 0 ||
+      !date
+    ) {
+      setToast({
+        type: "error",
+        message: "Enter a valid amount and date"
+      })
+      return
+    }
+
+    try {
+
+      setLoading(true)
+
+      await API.put(
+        `/students/${student._id}/installment/${installmentId}`,
+        {
+          amount: newAmount,
+          date
+        }
+      )
+
+      setToast({
+        type: "success",
+        message: "Installment updated successfully"
+      })
+
+      setShowInstallmentEditModal(false)
+
+      onUpdate()
+
+    } catch (err) {
+
+      setToast({
+        type: "error",
+        message:
+          err.response?.data?.message ||
+          err.message
+      })
+
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteInstallment = async (installmentId) => {
+
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this installment?"
+      )
+    ) {
+      return
+    }
+
+    try {
+
+      setLoading(true)
+
+      await API.delete(
+        `/students/${student._id}/installment/${installmentId}`
+      )
+
+      setToast({
+        type: "success",
+        message: "Installment deleted successfully"
+      })
+
+      onUpdate()
+
+    } catch (err) {
+
+      setToast({
+        type: "error",
+        message:
+          err.response?.data?.message ||
+          err.message
+      })
+
     } finally {
       setLoading(false)
     }
@@ -184,6 +339,59 @@ export default function Drawer({ student, onClose, onUpdate }) {
                           )}
                         </div>
                       </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "6px",
+                          flexWrap: "wrap"
+                        }}>
+                        <button
+                          className="btn"
+                          style={{
+                            padding: "6px 10px",
+                            fontSize: "12px",
+                            borderRadius: "6px",
+                            background: "rgba(59, 130, 246, 0.1)",
+                            color: "#3b82f6",
+                            border: "1px solid #3b82f6",
+                            cursor: "pointer"
+                          }}
+                          disabled={loading}
+                          onClick={() => {
+
+                            setInstallmentEditData({
+                              installmentId: inst._id,
+                              amount: inst.amount,
+                              date: new Date(inst.date)
+                                .toISOString()
+                                .split("T")[0]
+                            })
+
+                            setShowInstallmentEditModal(true)
+                          }}
+                        >
+                          ✏️ Edit
+                        </button>
+
+                        <button
+                          className="btn"
+                          style={{
+                            padding: "6px 10px",
+                            fontSize: "12px",
+                            borderRadius: "6px",
+                            background: "rgba(239, 68, 68, 0.1)",
+                            color: "#ef4444",
+                            border: "1px solid #ef4444",
+                            cursor: "pointer"
+                          }}
+                          disabled={loading}
+                          onClick={() =>
+                            handleDeleteInstallment(inst._id)
+                          }
+                        >
+                          🗑️ Delete
+                        </button></div>
                       
                       {inst.receiptUrl && (
                         <div style={{ display: "flex", gap: "8px" }}>
@@ -321,8 +529,36 @@ export default function Drawer({ student, onClose, onUpdate }) {
                   disabled={loading}
                 />
               </div>
+              <div className="form-group">
+                <label>Total Fee *</label>
+
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="Enter total fee"
+                  min="0"
+                  value={editData.totalFee}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      totalFee: e.target.value
+                    })
+                  }
+                  disabled={loading}
+                />
+
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    marginTop: "6px"
+                  }}
+                >
+                  Paid amount: ₹{student.paidFee}
+                </p></div>
               <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "8px" }}>
-                Only Name, Class, and Phone can be edited
+                Name, Class, Phone, and Total Fee can be edited.
+                Installments can be edited separately.
               </p>
             </div>
             <div className="modal-actions">
@@ -341,6 +577,112 @@ export default function Drawer({ student, onClose, onUpdate }) {
                 {loading ? "Saving..." : "Save Changes"}
               </button>
             </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {showInstallmentEditModal && (
+        <motion.div
+          className="modal-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() =>
+            setShowInstallmentEditModal(false)
+          }
+        >
+          <motion.div
+            className="modal"
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0.8 }}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+
+            <div className="modal-header">
+
+              <h2>Edit Installment</h2>
+
+              <button
+                className="close-btn"
+                onClick={() =>
+                  setShowInstallmentEditModal(false)
+                }
+              >
+                ✕
+              </button>
+
+            </div>
+
+            <div className="modal-content">
+
+              <div className="form-group">
+
+                <label>Amount *</label>
+
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  value={installmentEditData.amount}
+                  onChange={(e) =>
+                    setInstallmentEditData({
+                      ...installmentEditData,
+                      amount: e.target.value
+                    })
+                  }
+                  disabled={loading}
+                />
+
+              </div>
+
+              <div className="form-group">
+
+                <label>Date *</label>
+
+                <input
+                  type="date"
+                  className="form-input"
+                  value={installmentEditData.date}
+                  onChange={(e) =>
+                    setInstallmentEditData({
+                      ...installmentEditData,
+                      date: e.target.value
+                    })
+                  }
+                  disabled={loading}
+                />
+
+              </div>
+
+            </div>
+
+            <div className="modal-actions">
+
+              <button
+                className="btn btn-cancel"
+                onClick={() =>
+                  setShowInstallmentEditModal(false)
+                }
+                disabled={loading}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="btn btn-primary"
+                onClick={handleEditInstallment}
+                disabled={loading}
+              >
+                {loading
+                  ? "Saving..."
+                  : "Save Installment"}
+              </button>
+
+            </div>
+
           </motion.div>
         </motion.div>
       )}
