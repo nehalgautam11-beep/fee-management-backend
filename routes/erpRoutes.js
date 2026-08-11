@@ -16,6 +16,42 @@ async function findByErpIdentifier(identifier) {
   })
 }
 
+
+
+/* -------------------------------------------------------
+   HELPER — normalize class names to a standard format.
+   This is used to ensure that the ERP and Fee Management
+   agree on the same class name for each student.
+------------------------------------------------------- */
+
+
+
+
+function normalizeClass(className) {
+  if (!className) return className;
+
+  const normalized = className
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  const classMap = {
+    "kg 1": "KG-1",
+    "kg-1": "KG-1",
+    "KG 1": "KG-1",
+    "KG 2": "KG-2",
+    "kg 2": "KG-2",
+    "kg-2": "KG-2"
+  };
+
+  return classMap[normalized] || className;
+}
+
+
+
+
+
+
 /* =======================
    STUDENT ADMISSION (ERP -> Fee Management)
    Called by the ERP when a new student is admitted.
@@ -39,7 +75,9 @@ router.post("/students/import", verifyErpSecret, async (req, res) => {
   try {
     const { name, class: cls, erpStudentId } = req.body
 
-    if (!name || !cls) {
+const normalizedClass = normalizeClass(cls)
+
+    if (!name || !normalizedClass) {
       return res.status(400).json({ message: "name and class are required" })
     }
 
@@ -64,13 +102,13 @@ router.post("/students/import", verifyErpSecret, async (req, res) => {
     console.log("erpStudentId:", erpStudentId);
     console.log("studentCode to save:", erpStudentId);
     console.log("name:", name);
-    console.log("class:", cls);
+    console.log("class:", normalizedClass);
 
       const student = await Student.create({
     studentCode: erpStudentId,
     erpStudentId,
     name,
-    class: cls,
+    class: normalizedClass,
 
     totalFee: 0,
     paidFee: 0,
@@ -110,7 +148,7 @@ router.put("/students/:identifier", verifyErpSecret, async (req, res) => {
     const { name, class: cls } = req.body
 
     if (name !== undefined) student.name = name
-    if (cls !== undefined) student.class = cls
+    if (cls !== undefined) student.class = normalizeClass(cls)
 
     await student.save()
 
